@@ -7,6 +7,7 @@ import (
 
 func resourcePortV1() *schema.Resource {
 	return &schema.Resource{
+		Description: "Ports may be specified as part of the node resource, or as a separate ironic_port_v1 declaration.",
 		Create: resourcePortV1Create,
 		Read:   resourcePortV1Read,
 		Update: resourcePortV1Update,

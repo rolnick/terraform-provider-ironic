@@ -12,6 +12,7 @@ import (
 func dataSourceIronicIntrospection() *schema.Resource {
 	return &schema.Resource{
 		Read: dataSourceIronicIntrospectionRead,
+		Description: "When using Ironic inspector, you can use this data source to gather selected information such as network interface information, number of CPU's and architecture, and memory.",
 		Schema: map[string]*schema.Schema{
 			"uuid": {
 				Type:     schema.TypeString,

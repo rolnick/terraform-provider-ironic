@@ -17,6 +17,7 @@ import (
 // Schema resource definition for an Ironic node.
 func resourceNodeV1() *schema.Resource {
 	return &schema.Resource{
+		Description: "A node describes a hardware resource. A limited subset of provision states are supported, you may specify manage = true or available = true. You may also instruct Ironic to inspect (inspect = true) or clean (clean = true) the node. To bring a node to the active state, i.e. deploy the node - use a deployment resource instead.",
 		Create: resourceNodeV1Create,
 		Read:   resourceNodeV1Read,
 		Update: resourceNodeV1Update,

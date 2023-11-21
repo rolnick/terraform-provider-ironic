@@ -6,7 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"strings"
@@ -21,6 +21,7 @@ import (
 // Schema resource definition for an Ironic deployment.
 func resourceDeployment() *schema.Resource {
 	return &schema.Resource{
+		Description: "A deployment will provision a baremetal node, using the information given in the resource. The count metaparameter can be used to deploy multiple nodes. Terraform will drive the Ironic state machine to bring the node to an active state. The separation of deployment from the baremetal node defintion allows a user to manage their hardware outside of the provider if desired. Destruction of a deployment brings the baremetal node back to the available state.",
 		Create: resourceDeploymentCreate,
 		Read:   resourceDeploymentRead,
 		Delete: resourceDeploymentDelete,
@@ -221,7 +222,7 @@ func fetchFullIgnition(userDataURL string, userDataCaCert string, userDataHeader
 		}
 		defer resp.Body.Close()
 		var userData []byte
-		userData, err = ioutil.ReadAll(resp.Body)
+		userData, err = io.ReadAll(resp.Body)
 		if err != nil {
 			log.Printf("could not read user_data_url: %s", err)
 			return "", err
