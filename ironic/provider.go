@@ -3,6 +3,14 @@ package ironic
 import (
 	"context"
 	"fmt"
+	"gophercloud/openstack/baremetal/token"
+	tokenintrospection "gophercloud/openstack/baremetalintrospection/token"
+	"log"
+	"net/http"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/openstack"
 	"github.com/gophercloud/gophercloud/openstack/baremetal/httpbasic"
@@ -13,13 +21,6 @@ import (
 	"github.com/gophercloud/gophercloud/pagination"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"gophercloud/openstack/baremetal/token"
-	tokenintrospection "gophercloud/openstack/baremetalintrospection/token"
-	"log"
-	"net/http"
-	"strings"
-	"sync"
-	"time"
 )
 
 // Clients stores the client connection information for Ironic and Inspector
