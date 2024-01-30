@@ -8,12 +8,14 @@ import (
 	"strings"
 	"sync"
 	"time"
-
 	"github.com/gophercloud/gophercloud"
+	"github.com/gophercloud/gophercloud/openstack"
 	"github.com/gophercloud/gophercloud/openstack/baremetal/httpbasic"
+	"gophercloud/openstack/baremetal/token"
 	"github.com/gophercloud/gophercloud/openstack/baremetal/noauth"
 	"github.com/gophercloud/gophercloud/openstack/baremetal/v1/drivers"
 	httpbasicintrospection "github.com/gophercloud/gophercloud/openstack/baremetalintrospection/httpbasic"
+	tokenintrospection "gophercloud/openstack/baremetalintrospection/token"
 	noauthintrospection "github.com/gophercloud/gophercloud/openstack/baremetalintrospection/noauth"
 	"github.com/gophercloud/gophercloud/pagination"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -175,7 +177,7 @@ func Provider() *schema.Provider {
 				DefaultFunc: schema.EnvDefaultFunc("IRONIC_AUTH_STRATEGY", "noauth"),
 				Description: descriptions["auth_strategy"],
 				ValidateFunc: validation.StringInSlice([]string{
-					"noauth", "http_basic",
+					"noauth", "http_basic", "token",
 				}, false),
 			},
 			"ironic_username": {
@@ -204,6 +206,32 @@ func Provider() *schema.Provider {
 				DefaultFunc: schema.EnvDefaultFunc("INSPECTOR_HTTP_BASIC_PASSWORD", ""),
 				Description: descriptions["inspector_username"],
 			},
+			"openstack_url": {
+				Type:        schema.TypeString,
+				Required:    true,
+				DefaultFunc: schema.EnvDefaultFunc("OPENSTACK_ENDPOINT", ""),
+				Description: descriptions["openstack_url"],
+			},
+			"openstack_username": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				DefaultFunc: schema.EnvDefaultFunc("OPENSTACK_HTTP_BASIC_USERNAME", ""),
+				Description: descriptions["openstack_username"],
+			},
+			"openstack_password": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Sensitive:   true,
+				DefaultFunc: schema.EnvDefaultFunc("OPENSTACK_HTTP_BASIC_PASSWORD", ""),
+				Description: descriptions["openstack_username"],
+			},
+			"openstack_domain_name": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Sensitive:   true,
+				DefaultFunc: schema.EnvDefaultFunc("OPENSTACK_HTTP_BASIC_DOMAIN_NAME", "default"),
+				Description: descriptions["openstack_domain_name"],
+			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"ironic_node_v1":       resourceNodeV1(),
@@ -226,11 +254,15 @@ func init() {
 		"inspector":          "The endpoint for Ironic inspector",
 		"microversion":       "The microversion to use for Ironic",
 		"timeout":            "Wait at least the specified number of seconds for the API to become available",
-		"auth_strategy":      "Determine the strategy to use for authentication with Ironic services, Possible values: noauth, http_basic. Defaults to noauth.",
+		"auth_strategy":      "Determine the strategy to use for authentication with Ironic services, Possible values: noauth, http_basic, token. Defaults to noauth.",
 		"ironic_username":    "Username to be used by Ironic when using `http_basic` authentication",
 		"ironic_password":    "Password to be used by Ironic when using `http_basic` authentication",
 		"inspector_username": "Username to be used by Ironic Inspector when using `http_basic` authentication",
 		"inspector_password": "Password to be used by Ironic Inspector when using `http_basic` authentication",
+		"openstack_url":      "The authentication endpoint for Openstack",
+		"openstack_username": "Username to be used by Openstack when using `token` authentication",
+		"openstack_password": "Password to be used by Openstack when using `token` authentication",
+		"openstack_domain_name": "Domain name to be used by Openstack when using `token` authentication, default: default",
 	}
 }
 
@@ -282,6 +314,59 @@ func configureProvider(schema *schema.ResourceData) (interface{}, error) {
 			clients.inspector = inspector
 		}
 
+	}
+	if authStrategy == "token" {
+		log.Printf("[DEBUG] Using token auth_strategy")
+		openstackURL := schema.Get("openstack_url").(string)
+		if openstackURL == "" {
+			return nil, fmt.Errorf("openstack_url is required for ironic provider")
+		}
+
+		openstackUser := schema.Get("openstack_username").(string)
+		openstackPassword := schema.Get("openstack_password").(string)
+		openstackDmainName := schema.Get("openstack_domain_name").(string)
+		if (openstackUser == "" || openstackPassword  == "") {
+			return nil, fmt.Errorf("openstack_username and openstack_password are required for ironic provider")
+		}
+
+		opts := gophercloud.AuthOptions{
+			IdentityEndpoint: openstackURL,
+			Username: openstackUser,
+			Password: openstackPassword,
+			DomainName: openstackDmainName,
+		}
+		provider, err := openstack.AuthenticatedClient(opts)
+		if err != nil {
+			return nil, fmt.Errorf("Cannot authenticate: (%v)", err)
+		}
+
+		ironicToken := provider.Token()
+		ironic, err := token.NewBareMetalHTTPToken(token.EndpointOpts{
+			IronicEndpoint:	url,
+			IronicToken:	ironicToken,
+		})
+		if err != nil {
+			return nil, err
+		}
+		log.Printf("[INFO] Using token auth_strategy")
+		ironic.Microversion = schema.Get("microversion").(string)
+		clients.ironic = ironic
+
+		inspectorURL := schema.Get("inspector").(string)
+		if inspectorURL != "" {
+			inspectorToken := ironicToken
+			log.Printf("[DEBUG] Inspector endpoint is %s", inspectorURL)
+
+			inspector, err := tokenintrospection.NewBareMetalIntrospectionHTTPToken(tokenintrospection.EndpointOpts{
+				IronicInspectorEndpoint:     inspectorURL,
+				IronicInspectorToken:		 inspectorToken,
+			})
+
+			if err != nil {
+				return nil, err
+			}
+			clients.inspector = inspector
+		}
 	} else {
 		log.Printf("[DEBUG] Using noauth auth_strategy")
 		ironic, err := noauth.NewBareMetalNoAuth(noauth.EndpointOpts{
