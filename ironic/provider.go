@@ -3,23 +3,23 @@ package ironic
 import (
 	"context"
 	"fmt"
+	"github.com/gophercloud/gophercloud"
+	"github.com/gophercloud/gophercloud/openstack"
+	"github.com/gophercloud/gophercloud/openstack/baremetal/httpbasic"
+	"github.com/gophercloud/gophercloud/openstack/baremetal/noauth"
+	"github.com/gophercloud/gophercloud/openstack/baremetal/v1/drivers"
+	httpbasicintrospection "github.com/gophercloud/gophercloud/openstack/baremetalintrospection/httpbasic"
+	noauthintrospection "github.com/gophercloud/gophercloud/openstack/baremetalintrospection/noauth"
+	"github.com/gophercloud/gophercloud/pagination"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"gophercloud/openstack/baremetal/token"
+	tokenintrospection "gophercloud/openstack/baremetalintrospection/token"
 	"log"
 	"net/http"
 	"strings"
 	"sync"
 	"time"
-	"github.com/gophercloud/gophercloud"
-	"github.com/gophercloud/gophercloud/openstack"
-	"github.com/gophercloud/gophercloud/openstack/baremetal/httpbasic"
-	"gophercloud/openstack/baremetal/token"
-	"github.com/gophercloud/gophercloud/openstack/baremetal/noauth"
-	"github.com/gophercloud/gophercloud/openstack/baremetal/v1/drivers"
-	httpbasicintrospection "github.com/gophercloud/gophercloud/openstack/baremetalintrospection/httpbasic"
-	tokenintrospection "gophercloud/openstack/baremetalintrospection/token"
-	noauthintrospection "github.com/gophercloud/gophercloud/openstack/baremetalintrospection/noauth"
-	"github.com/gophercloud/gophercloud/pagination"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 // Clients stores the client connection information for Ironic and Inspector
@@ -250,18 +250,18 @@ var descriptions map[string]string
 
 func init() {
 	descriptions = map[string]string{
-		"url":                "The authentication endpoint for Ironic",
-		"inspector":          "The endpoint for Ironic inspector",
-		"microversion":       "The microversion to use for Ironic",
-		"timeout":            "Wait at least the specified number of seconds for the API to become available",
-		"auth_strategy":      "Determine the strategy to use for authentication with Ironic services, Possible values: noauth, http_basic, token. Defaults to noauth.",
-		"ironic_username":    "Username to be used by Ironic when using `http_basic` authentication",
-		"ironic_password":    "Password to be used by Ironic when using `http_basic` authentication",
-		"inspector_username": "Username to be used by Ironic Inspector when using `http_basic` authentication",
-		"inspector_password": "Password to be used by Ironic Inspector when using `http_basic` authentication",
-		"openstack_url":      "The authentication endpoint for Openstack",
-		"openstack_username": "Username to be used by Openstack when using `token` authentication",
-		"openstack_password": "Password to be used by Openstack when using `token` authentication",
+		"url":                   "The authentication endpoint for Ironic",
+		"inspector":             "The endpoint for Ironic inspector",
+		"microversion":          "The microversion to use for Ironic",
+		"timeout":               "Wait at least the specified number of seconds for the API to become available",
+		"auth_strategy":         "Determine the strategy to use for authentication with Ironic services, Possible values: noauth, http_basic, token. Defaults to noauth.",
+		"ironic_username":       "Username to be used by Ironic when using `http_basic` authentication",
+		"ironic_password":       "Password to be used by Ironic when using `http_basic` authentication",
+		"inspector_username":    "Username to be used by Ironic Inspector when using `http_basic` authentication",
+		"inspector_password":    "Password to be used by Ironic Inspector when using `http_basic` authentication",
+		"openstack_url":         "The authentication endpoint for Openstack",
+		"openstack_username":    "Username to be used by Openstack when using `token` authentication",
+		"openstack_password":    "Password to be used by Openstack when using `token` authentication",
 		"openstack_domain_name": "Domain name to be used by Openstack when using `token` authentication, default: default",
 	}
 }
@@ -325,15 +325,15 @@ func configureProvider(schema *schema.ResourceData) (interface{}, error) {
 		openstackUser := schema.Get("openstack_username").(string)
 		openstackPassword := schema.Get("openstack_password").(string)
 		openstackDmainName := schema.Get("openstack_domain_name").(string)
-		if (openstackUser == "" || openstackPassword  == "") {
+		if openstackUser == "" || openstackPassword == "" {
 			return nil, fmt.Errorf("openstack_username and openstack_password are required for ironic provider")
 		}
 
 		opts := gophercloud.AuthOptions{
 			IdentityEndpoint: openstackURL,
-			Username: openstackUser,
-			Password: openstackPassword,
-			DomainName: openstackDmainName,
+			Username:         openstackUser,
+			Password:         openstackPassword,
+			DomainName:       openstackDmainName,
 		}
 		provider, err := openstack.AuthenticatedClient(opts)
 		if err != nil {
@@ -342,8 +342,8 @@ func configureProvider(schema *schema.ResourceData) (interface{}, error) {
 
 		ironicToken := provider.Token()
 		ironic, err := token.NewBareMetalHTTPToken(token.EndpointOpts{
-			IronicEndpoint:	url,
-			IronicToken:	ironicToken,
+			IronicEndpoint: url,
+			IronicToken:    ironicToken,
 		})
 		if err != nil {
 			return nil, err
@@ -358,8 +358,8 @@ func configureProvider(schema *schema.ResourceData) (interface{}, error) {
 			log.Printf("[DEBUG] Inspector endpoint is %s", inspectorURL)
 
 			inspector, err := tokenintrospection.NewBareMetalIntrospectionHTTPToken(tokenintrospection.EndpointOpts{
-				IronicInspectorEndpoint:     inspectorURL,
-				IronicInspectorToken:		 inspectorToken,
+				IronicInspectorEndpoint: inspectorURL,
+				IronicInspectorToken:    inspectorToken,
 			})
 
 			if err != nil {

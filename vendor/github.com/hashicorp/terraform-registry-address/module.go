@@ -112,7 +112,7 @@ func ParseModuleSource(raw string) (Module, error) {
 
 // MustParseModuleSource is a wrapper around ParseModuleSource that panics if
 // it returns an error.
-func MustParseModuleSource(raw string) (Module) {
+func MustParseModuleSource(raw string) Module {
 	mod, err := ParseModuleSource(raw)
 	if err != nil {
 		panic(err)

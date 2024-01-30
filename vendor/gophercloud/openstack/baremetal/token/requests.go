@@ -8,8 +8,8 @@ import (
 
 // EndpointOpts specifies a "http_basic" Ironic Endpoint
 type EndpointOpts struct {
-	IronicEndpoint     string
-	IronicToken        string
+	IronicEndpoint string
+	IronicToken    string
 }
 
 func initClientOpts(client *gophercloud.ProviderClient, eo EndpointOpts) (*gophercloud.ServiceClient, error) {
@@ -38,4 +38,3 @@ func NewBareMetalHTTPToken(eo EndpointOpts) (*gophercloud.ServiceClient, error) 
 
 	return sc, nil
 }
-

@@ -8,8 +8,8 @@ import (
 
 // EndpointOpts specifies a "token" Ironic Inspector Endpoint.
 type EndpointOpts struct {
-	IronicInspectorEndpoint      string
-	IronicInspectorToken         string
+	IronicInspectorEndpoint string
+	IronicInspectorToken    string
 }
 
 func initClientOpts(client *gophercloud.ProviderClient, eo EndpointOpts) (*gophercloud.ServiceClient, error) {

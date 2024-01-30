@@ -14,9 +14,9 @@ import (
 func resourceAllocationV1() *schema.Resource {
 	return &schema.Resource{
 		Description: "The Allocation resource represents a request to find and allocate a Node for deployment. The microversion must be 1.52 or later.",
-		Create: resourceAllocationV1Create,
-		Read:   resourceAllocationV1Read,
-		Delete: resourceAllocationV1Delete,
+		Create:      resourceAllocationV1Create,
+		Read:        resourceAllocationV1Read,
+		Delete:      resourceAllocationV1Delete,
 
 		Schema: map[string]*schema.Schema{
 			"name": {

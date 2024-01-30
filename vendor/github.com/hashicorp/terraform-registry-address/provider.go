@@ -293,7 +293,7 @@ func ParseProviderSource(str string) (Provider, error) {
 
 // MustParseProviderSource is a wrapper around ParseProviderSource that panics if
 // it returns an error.
-func MustParseProviderSource(raw string) (Provider) {
+func MustParseProviderSource(raw string) Provider {
 	p, err := ParseProviderSource(raw)
 	if err != nil {
 		panic(err)

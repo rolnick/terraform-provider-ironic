@@ -557,7 +557,7 @@ func checkSignatureDetails(key *Key, signature *packet.Signature, config *packet
 	now := config.Now()
 	primaryIdentity := key.Entity.PrimaryIdentity()
 	signedBySubKey := key.PublicKey != key.Entity.PrimaryKey
-	sigsToCheck := []*packet.Signature{ signature, primaryIdentity.SelfSignature }
+	sigsToCheck := []*packet.Signature{signature, primaryIdentity.SelfSignature}
 	if signedBySubKey {
 		sigsToCheck = append(sigsToCheck, key.SelfSignature, key.SelfSignature.EmbeddedSignature)
 	}
