@@ -85,11 +85,11 @@ func resourcePortV1Read(d *schema.ResourceData, meta interface{}) error {
 	if err != nil {
 		return err
 	}
-	err = d.Set("port_group_id", port.PortGroupUUID)
+	err = d.Set("port_group_uuid", port.PortGroupUUID)
 	if err != nil {
 		return err
 	}
-	err = d.Set("local_link_collection", port.LocalLinkConnection)
+	err = d.Set("local_link_connection", port.LocalLinkConnection)
 	if err != nil {
 		return err
 	}
@@ -120,17 +120,17 @@ func resourcePortV1Delete(d *schema.ResourceData, meta interface{}) error {
 
 func portSchemaToCreateOpts(d *schema.ResourceData) *ports.CreateOpts {
 	pxeEnabled := d.Get("pxe_enabled").(bool)
-	isSmartNic := d.Get("is_smart_nic").(bool)
+	// isSmartNic := d.Get("is_smart_nic").(bool)
 
 	opts := ports.CreateOpts{
-		NodeUUID:      d.Get("node_uuid").(string),
-		Address:       d.Get("address").(string),
-		PortGroupUUID: d.Get("port_group_uuid").(string),
-		//LocalLinkConnection: d.Get("local_link_collection").(map[string]interface{}),
-		PXEEnabled:      &pxeEnabled,
-		PhysicalNetwork: d.Get("physical_network").(string),
-		//Extra:               d.Get("extra").(map[string]interface{}),
-		IsSmartNIC: &isSmartNic,
+		NodeUUID:            d.Get("node_uuid").(string),
+		Address:             d.Get("address").(string),
+		PortGroupUUID:       d.Get("port_group_uuid").(string),
+		LocalLinkConnection: d.Get("local_link_connection").(map[string]interface{}),
+		PXEEnabled:          &pxeEnabled,
+		PhysicalNetwork:     d.Get("physical_network").(string),
+		Extra:               d.Get("extra").(map[string]interface{}),
+		// IsSmartNIC: &isSmartNic,
 	}
 
 	return &opts

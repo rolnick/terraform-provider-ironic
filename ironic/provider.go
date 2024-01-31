@@ -213,19 +213,6 @@ func Provider() *schema.Provider {
 				DefaultFunc: schema.EnvDefaultFunc("OPENSTACK_ENDPOINT", ""),
 				Description: descriptions["openstack_url"],
 			},
-			"openstack_username": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				DefaultFunc: schema.EnvDefaultFunc("OPENSTACK_HTTP_BASIC_USERNAME", ""),
-				Description: descriptions["openstack_username"],
-			},
-			"openstack_password": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Sensitive:   true,
-				DefaultFunc: schema.EnvDefaultFunc("OPENSTACK_HTTP_BASIC_PASSWORD", ""),
-				Description: descriptions["openstack_username"],
-			},
 			"openstack_domain_name": {
 				Type:        schema.TypeString,
 				Optional:    true,
@@ -261,8 +248,6 @@ func init() {
 		"inspector_username":    "Username to be used by Ironic Inspector when using `http_basic` authentication",
 		"inspector_password":    "Password to be used by Ironic Inspector when using `http_basic` authentication",
 		"openstack_url":         "The authentication endpoint for Openstack",
-		"openstack_username":    "Username to be used by Openstack when using `token` authentication",
-		"openstack_password":    "Password to be used by Openstack when using `token` authentication",
 		"openstack_domain_name": "Domain name to be used by Openstack when using `token` authentication, default: default",
 	}
 }
@@ -323,17 +308,17 @@ func configureProvider(schema *schema.ResourceData) (interface{}, error) {
 			return nil, fmt.Errorf("openstack_url is required for ironic provider")
 		}
 
-		openstackUser := schema.Get("openstack_username").(string)
-		openstackPassword := schema.Get("openstack_password").(string)
+		ironicUser := schema.Get("ironic_username").(string)
+		ironicPassword := schema.Get("ironic_password").(string)
 		openstackDmainName := schema.Get("openstack_domain_name").(string)
-		if openstackUser == "" || openstackPassword == "" {
-			return nil, fmt.Errorf("openstack_username and openstack_password are required for ironic provider")
+		if ironicUser == "" || ironicPassword == "" {
+			return nil, fmt.Errorf("ironic_username and ironic_password are required for ironic provider")
 		}
 
 		opts := gophercloud.AuthOptions{
 			IdentityEndpoint: openstackURL,
-			Username:         openstackUser,
-			Password:         openstackPassword,
+			Username:         ironicUser,
+			Password:         ironicPassword,
 			DomainName:       openstackDmainName,
 		}
 		provider, err := openstack.AuthenticatedClient(opts)
@@ -355,6 +340,23 @@ func configureProvider(schema *schema.ResourceData) (interface{}, error) {
 
 		inspectorURL := schema.Get("inspector").(string)
 		if inspectorURL != "" {
+			inspectorUser := schema.Get("inspector_username").(string)
+			inspectorPassword := schema.Get("inspector_password").(string)
+			if inspectorUser == "" || inspectorPassword == "" {
+				return nil, fmt.Errorf("inspectorUser and inspectorPassword are required for inspector provider")
+			}
+			opts := gophercloud.AuthOptions{
+				IdentityEndpoint: openstackURL,
+				Username:         inspectorUser,
+				Password:         inspectorPassword,
+				DomainName:       openstackDmainName,
+			}
+			inspector_provider, err := openstack.AuthenticatedClient(opts)
+			if err != nil {
+				return nil, fmt.Errorf("Cannot authenticate: (%v)", err)
+			}
+			ironicToken := inspector_provider.Token()
+
 			inspectorToken := ironicToken
 			log.Printf("[DEBUG] Inspector endpoint is %s", inspectorURL)
 
