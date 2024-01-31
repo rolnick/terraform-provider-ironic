@@ -26,6 +26,21 @@ provider "ironic" {
   timeout      = 900
 }
 ```
+or Openstack
+```terraform
+provider "ironic" {
+  url          = "http://localhost:6385/v1"
+  inspector    = "http://localhost:5050/v1"
+  microversion = "1.52"
+  timeout      = 900
+  auth_strategy         = "token"
+  openstack_url         = http://localhost:5000/v3
+  ironic_username    = "openstack_user"
+  ironic_password    = "openstack_password"
+  inspector_username    = "openstack_user"
+  inspector_password    = "openstack_password"
+}
+```
 
 ## Resources
 
