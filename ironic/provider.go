@@ -351,11 +351,11 @@ func configureProvider(schema *schema.ResourceData) (interface{}, error) {
 				Password:         inspectorPassword,
 				DomainName:       openstackDmainName,
 			}
-			inspector_provider, err := openstack.AuthenticatedClient(opts)
+			inspectorProvider, err := openstack.AuthenticatedClient(opts)
 			if err != nil {
 				return nil, fmt.Errorf("Cannot authenticate: (%v)", err)
 			}
-			ironicToken := inspector_provider.Token()
+			ironicToken := inspectorProvider.Token()
 
 			inspectorToken := ironicToken
 			log.Printf("[DEBUG] Inspector endpoint is %s", inspectorURL)
