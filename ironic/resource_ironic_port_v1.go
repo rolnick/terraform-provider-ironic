@@ -114,6 +114,15 @@ func resourcePortV1Update(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourcePortV1Delete(d *schema.ResourceData, meta interface{}) error {
+	client, err := meta.(*Clients).GetIronicClient()
+	if err != nil {
+		return err
+	}
+	err = ports.Delete(client, d.Id()).ExtractErr()
+	if err != nil {
+		return err
+	}
+
 	return nil
 
 }
