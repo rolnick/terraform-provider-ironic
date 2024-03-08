@@ -1,6 +1,9 @@
 package ironic
 
 import (
+	"fmt"
+	"log"
+
 	"github.com/gophercloud/gophercloud/openstack/baremetal/v1/ports"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -109,7 +112,66 @@ func resourcePortV1Read(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourcePortV1Update(d *schema.ResourceData, meta interface{}) error {
-	return nil
+	client, err := meta.(*Clients).GetIronicClient()
+	if err != nil {
+		return err
+	}
+	d.Partial(true)
+
+	stringFields := []string{
+		"pxe_enabled",
+		"address",
+		"physical_network",
+		"extra",
+		"is_smart_nic",
+		"node_uuid",
+		"port_group_uuid",
+	}
+
+	localLinkConnectionFields := []string{
+		"port_id",
+		"switch_id",
+		"switch_info",
+	}
+
+	for _, field := range stringFields {
+		if d.HasChange(field) {
+			opts := ports.UpdateOpts{
+				ports.UpdateOperation{
+					Op:    ports.ReplaceOp,
+					Path:  fmt.Sprintf("/%s", field),
+					Value: d.Get(field).(string),
+				},
+			}
+
+			result, err := ports.Update(client, d.Id(), opts).Extract()
+			if err != nil {
+				return err
+			}
+			log.Printf("[DEBUG] Port update result %s", result)
+		}
+	}
+	if d.HasChange("local_link_connection") {
+		localLinkConnectionInfo := d.Get("local_link_connection").(map[string]interface{})
+		for _, field := range localLinkConnectionFields {
+			opts := ports.UpdateOpts{
+				ports.UpdateOperation{
+					Op:    ports.ReplaceOp,
+					Path:  fmt.Sprintf("/local_link_connection/%s", field),
+					Value: localLinkConnectionInfo[field],
+				},
+			}
+			result, err := ports.Update(client, d.Id(), opts).Extract()
+			if err != nil {
+				return err
+			}
+			log.Printf("[DEBUG] Port update result %s", result)
+		}
+
+	}
+	d.Partial(false)
+
+	return resourcePortV1Read(d, meta)
 
 }
 
