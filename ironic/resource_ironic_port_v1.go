@@ -2,7 +2,6 @@ package ironic
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/gophercloud/gophercloud/openstack/baremetal/v1/ports"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -144,11 +143,10 @@ func resourcePortV1Update(d *schema.ResourceData, meta interface{}) error {
 				},
 			}
 
-			result, err := ports.Update(client, d.Id(), opts).Extract()
+			_, err := ports.Update(client, d.Id(), opts).Extract()
 			if err != nil {
 				return err
 			}
-			log.Printf("[DEBUG] Port update result %s", result)
 		}
 	}
 	if d.HasChange("local_link_connection") {
@@ -161,11 +159,10 @@ func resourcePortV1Update(d *schema.ResourceData, meta interface{}) error {
 					Value: localLinkConnectionInfo[field],
 				},
 			}
-			result, err := ports.Update(client, d.Id(), opts).Extract()
+			_, err := ports.Update(client, d.Id(), opts).Extract()
 			if err != nil {
 				return err
 			}
-			log.Printf("[DEBUG] Port update result %s", result)
 		}
 
 	}
